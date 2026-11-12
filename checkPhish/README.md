@@ -1,57 +1,39 @@
+# checkPhish
+
+A simple Go client for the CheckPhish API.
+
 Go to checkphish.ai to get an apikey.
 
 # Usage: 
 go build main.go
 ./main evil.com apikey
 
-
-# checkPhish
-
-```go
-import "."
-```
-
 ## Index
 
-- [Constants](<#constants>)
-- [func CPErrCodes(code int) error](<#func-cperrcodes>)
-- [func NewHttpClient() (*http.Client, error)](<#func-newhttpclient>)
-- [func PollInterval()](<#func-pollinterval>)
-- [type CPClient](<#type-cpclient>)
-  - [func NewAuthClient(hc *http.Client, apikey string) *CPClient](<#func-newauthclient>)
-  - [func (sc *CPClient) GetResultJob(id string) (CPDoneResponse, error)](<#func-cpclient-getresultjob>)
-  - [func (sc *CPClient) NewSearchJob(url string) (CPScanResponse, error)](<#func-cpclient-newsearchjob>)
-  - [func (sc *CPClient) NewStatusJob(id string) (CPStatusResponse, error)](<#func-cpclient-newstatusjob>)
-- [type CPDoneResponse](<#type-cpdoneresponse>)
-- [type CPScanResponse](<#type-cpscanresponse>)
-- [type CPStatusResponse](<#type-cpstatusresponse>)
-
+* [Constants](#constants)
+* [func NewClient](#func-newclient)
+* [type CPClient](#type-cpclient)
+  * [func (c *CPClient) NewSearchJob](#func-cpclient-newsearchjob)
+  * [func (c *CPClient) NewStatusJob](#func-cpclient-newstatusjob)
+  * [func (c *CPClient) GetResultJob](#func-cpclient-getresultjob)
+* [func cpErrCodes](#func-cperrcodes)
+* [type CPScanResponse](#type-cpscanresponse)
+* [type CPStatusResponse](#type-cpstatusresponse)
+* [type CPDoneResponse](#type-cpdoneresponse)
 
 ## Constants
 
 ```go
-const (
-    BaseUrl = "https://developers.checkphish.ai/api"
-)
+const baseURL = "https://developers.checkphish.ai/api"
 ```
 
-## func CPErrCodes
+## func NewClient
 
 ```go
-func CPErrCodes(code int) error
+func NewClient(apiKey string) *CPClient
 ```
 
-## func NewHttpClient
-
-```go
-func NewHttpClient() (*http.Client, error)
-```
-
-## func PollInterval
-
-```go
-func PollInterval()
-```
+NewClient returns a CPClient configured with a 30-second timeout.
 
 ## type CPClient
 
@@ -61,29 +43,62 @@ type CPClient struct {
 }
 ```
 
-### func NewAuthClient
+CPClient is a client for the CheckPhish API.
+
+### func (*CPClient) NewSearchJob
 
 ```go
-func NewAuthClient(hc *http.Client, apikey string) *CPClient
+func (c *CPClient) NewSearchJob(ctx context.Context, url string) (*CPScanResponse, error)
 ```
 
-### func \(\*CPClient\) GetResultJob
+NewSearchJob submits a URL for scanning and returns the job ID.
+
+### func (*CPClient) NewStatusJob
 
 ```go
-func (sc *CPClient) GetResultJob(id string) (CPDoneResponse, error)
+func (c *CPClient) NewStatusJob(ctx context.Context, id string) (*CPStatusResponse, error)
 ```
 
-### func \(\*CPClient\) NewSearchJob
+NewStatusJob checks the current status of a previously submitted job.
+
+### func (*CPClient) GetResultJob
 
 ```go
-func (sc *CPClient) NewSearchJob(url string) (CPScanResponse, error)
+func (c *CPClient) GetResultJob(ctx context.Context, id string) (*CPDoneResponse, error)
 ```
 
-### func \(\*CPClient\) NewStatusJob
+GetResultJob retrieves the final result for a completed job.
+
+## func cpErrCodes
 
 ```go
-func (sc *CPClient) NewStatusJob(id string) (CPStatusResponse, error)
+func cpErrCodes(code int) error
 ```
+
+cpErrCodes maps HTTP status codes from the CheckPhish API to errors.
+
+## type CPScanResponse
+
+```go
+type CPScanResponse struct {
+    Jobid     string `json:"jobID"`
+    Timestamp int64  `json:"timestamp"`
+}
+```
+
+CPScanResponse is returned when a new scan job is submitted.
+
+## type CPStatusResponse
+
+```go
+type CPStatusResponse struct {
+    JobID  string `json:"job_id"`
+    URL    string `json:"url"`
+    Status string `json:"status"`
+}
+```
+
+CPStatusResponse contains the current status of a scan job.
 
 ## type CPDoneResponse
 
@@ -96,24 +111,5 @@ type CPDoneResponse struct {
     Disposition string `json:"disposition"`
     Brand       string `json:"brand"`
     Error       bool   `json:"error"`
-}
-```
-
-## type CPScanResponse
-
-```go
-type CPScanResponse struct {
-    Jobid     string `json:"jobID"`
-    Timestamp int64  `json:"timestamp"`
-}
-```
-
-## type CPStatusResponse
-
-```go
-type CPStatusResponse struct {
-    JobID  string `json:"job_id"`
-    URL    string `json:"url"`
-    Status string `json:"status"`
 }
 ```
